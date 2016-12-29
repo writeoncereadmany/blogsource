@@ -1,9 +1,10 @@
 ---
 layout: post
+title: Refactoring towards a Functional Style
+author: Tom Johnson
+published: true
+excerpt_separator: <!--more-->
 ---
-
-# Refactoring towards Functional Style
-
 Yesterday, I refactored a method. 
 
 Nothing unusual about that - we refactor code constantly. Code is, after all, better described as something grown than something built, and a large part of gardening is keeping the weeds in check. Normally, I wouldn't have given it a second thought.
@@ -11,6 +12,7 @@ Nothing unusual about that - we refactor code constantly. Code is, after all, be
 What was unusual, though, was this was my first time pairing with Sarah, who's relatively new to Java 8 constructs like Optionals. Pairing with someone new often leads to more discussion of what's being done and why, which can provoke some interesting reflections.
 
 As we stepped through the refactorings, I noticed a few simple pressures were guiding us towards a functional approach. Each one only made a small, incremental improvement. Together, they had a huge effect on the code.
+<!--more-->
 
 Here's the original code:
 

@@ -3,6 +3,7 @@ layout: post
 title: Optional.get() considered harmful
 author: Tom Johnson
 published: true
+excerpt_separator: <!--more-->
 ---
 
 > I call it my billion-dollar mistake. It was the invention of the null reference in 1965... **My goal was to ensure that all use of references should be absolutely safe, with checking performed automatically by the compiler**. But I couldn't resist the temptation to put in a null reference, simply because it was so easy to implement. This has led to innumerable errors, vulnerabilities, and system crashes, which have probably caused a billion dollars of pain and damage in the last forty years.
@@ -36,6 +37,7 @@ The latter code is, to my mind, indisputably better than the former. The possibi
 Intent is clearer. Mistakes are less likely. These are good things.
 
 That said, **don't write code like this**. Just because it's better than the null-exposed version doesn't make it *good*.
+<!--more-->
 
 So, what's wrong with it? It's right here:
 
