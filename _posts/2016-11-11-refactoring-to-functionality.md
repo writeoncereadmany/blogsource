@@ -42,7 +42,7 @@ private Optional<ResponseWithMaybeDeal> matchResponseToDeal(BidResponse bidRespo
 
 My first impression: well, I can trace through that and understand what's going on, but it's a little hairy. Let's see if we can smooth it out a bit.
 
-### PRINCIPLE 1: Favour early-return over single-return.
+#### PRINCIPLE 1: Favour early-return over single-return.
 
 The first thing I noticed was this:
 
@@ -115,7 +115,7 @@ private Optional<ResponseWithMaybeDeal> matchResponseToDeal(BidResponse bidRespo
     }
 }
 ```
-### PRINCIPLE 2: Favour if-expressions over if-statements
+#### PRINCIPLE 2: Favour if-expressions over if-statements
 
 The next thing I noticed was this:
 
@@ -163,7 +163,7 @@ We now have something that's slightly terser. More importantly, this change *adv
 
 It's a more functional way of describing what the code's doing. I'm not *making* the code more functional; I'm just *exposing* the functional properties of the code which already existed. Whether you think this is a good thing in and of itself is up to you, but – as you'll see – these changes make it easier to spot further functional refactorings down the line.
 
-### PRINCIPLE 3: Don't treat Optionals like nulls
+#### PRINCIPLE 3: Don't treat Optionals like nulls
 
 The next thing I noticed was:
 
@@ -241,7 +241,7 @@ There are a few important things to notice about this change:
 * I've used `orElseGet` with a lambda instead of just `orElse` with the value to prevent creating unnecessary objects. Generally, `orElseGet()` should be favoured over `orElse()` unless you already have an instance to return. In my opinion, little would be lost if the only way to get a `T` out of an `Optional<T>` was `orElseGet()`.
 * In order to use `Optional`'s branching, we have to wrap our return values in more `Optional`s.
 
-### PRINCIPLE 4: Think outside the box
+#### PRINCIPLE 4: Think outside the box
 
 At this point we started asking ourselves: this wrapping in `Optional`s is clunky, why are we doing that? We're doing that in order to return an `Optional<ResponseWithMaybeDeal>`, because we're in a situation where we can return `Optional.empty()`. Where's the empty case?
 
@@ -276,7 +276,7 @@ private ResponseWithMaybeDeal matchResponseToDeal(BidResponse bidResponse) {
 ```
 We could have made this simplification without having gone through the previous steps, but the path we were going down led us to question whether or not we were doing the right thing.
 
-### PRINCIPLE 5: Repeated patterns are usually liftable
+#### PRINCIPLE 5: Repeated patterns are usually liftable
 
 The next thing we noticed was:
 
@@ -340,7 +340,7 @@ private ResponseWithMaybeDeal matchResponseToDeal(BidResponse bidResponse) {
 ```
 And, finally, it feels like we're done. First get a `maybeDeal` (by getting the deal id, and then looking up the deal, assuming they both exist), and then we construct a `ResponseWithMaybeDeal` with the `BidResponse` and the `maybeDeal`. It really does just do what it says on the tin.
 
-### SUMMING UP
+#### SUMMING UP
 
 Before we go, let's just reflect on how far we came - we started with this:
 

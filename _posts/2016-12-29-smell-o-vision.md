@@ -2,7 +2,7 @@
 layout: post
 title: Smell-O-Vision
 author: Tom Johnson
-published: false
+published: true
 excerpt_separator: <!--more-->
 ---
 
@@ -69,7 +69,7 @@ It's easy to do: just surround the formatted code with a `<span class=whatever>`
 
 The issue here is that I want writing blogs to be lightweight, so I'm using Jekyll with posts written in markdown - which doesn't really support that.
 
-### Do It Yourself
+#### Do It Yourself
 
 The first thing I did was to simply wrap the bits I wanted highlighted in spans manually. I'd build the site, then go in and modify the generated HTML.
 
@@ -86,7 +86,7 @@ I knew where I wanted to be: I wanted to apply the highlighting as part of the p
 
 That's a lot of problems to solve all at once. So I didn't.
 
-### Out of Band Post-Processing
+#### Out of Band Post-Processing
 
 I wasn't going to start getting into the Jekyll pipeline at first, so I wrote a processor that I could just use myself. This is fine while my blog is a couple of pages: after each build, I can just run it manually. 
 
@@ -175,7 +175,7 @@ That seemed to work pretty well for the first couple of blogposts I used it on. 
 
 That said, I knew it wasn't going to scale, so I had to bite the bullet and do the job properly.
 
-### Plugging In
+#### Plugging In
 
 The next step was to integrate this into the Jekyll pipeline, which meant it was time to turn this into a plugin. That meant, at a minimum, I needed to:
 
@@ -187,15 +187,26 @@ By now I had a strong idea of how I wanted to model , but that was too big a ste
 
 Learning enough Ruby to replace some strings with others according to a regex wasn't hard. Adding a plugin to the build is trivial: just put a `*.rb` file in `_plugins` in the root. And there was an obvious place to plug it in to, as well: post-render on posts. 
 
-So, after a little experimentation and reading around the API, I ended up with the following plugin:
+So, after a little (well, a lot of) experimentation and reading around the API, I ended up with the following plugin:
 
-```ruby
+```ruby 
+def extract_smell(content)
+  content.gsub(/<span class="s">"!!(?<smell>[^!]*)!!"<\/span>/) do |match|
+    smell = $1
+    if smell == 'end' then '</span>' else "<span class=#{smell}>" end
+  end
+end
+
 Jekyll::Hooks.register :posts, :post_render do |post|
-   post.content = post.content.gsub(/<span class="s">"!!(?<smell>[^!]*)!!"<\/span>/) do |match|
-     smell = $1
-     if smell == 'end' then '</span>' else "<span class=#{smell}>" end
-   end
+   post.output = extract_smell(post.output)
+   post.data["excerpt"].output = extract_smell(post.data["excerpt"].output)
 end
 ```
 
-What happened then surprised me. My post-processing was being applied, but *only on the front page*, not on the page for the individual posts. 
+And this does what I need, so I can run a Jekyll server and update the posts as I go, and just have smell-o-vision built in to my processing pipeline. Job done, right?
+
+#### Doing It Properly
+
+The job is, most emphatically, *not* done at this point. It works, but that's all I can really say for it. It's not scalable in a number of directions: if I wanted to integrate with a different syntax highlighter, or a different language, or a different output format, then there's no principled way of doing that.
+
+How to model it properly, and how to implement a properly modelled solution, though - that's a topic for another time. Hopefully, I'll be able follow this up soon.

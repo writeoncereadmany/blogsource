@@ -64,7 +64,7 @@ Simply put: the only time it is safe to call `Optional.get()` is when we know it
 
 So what happens when you call `get()` on an empty `Optional`? You get a `NoSuchElementException`: Java 8's sick joke version of a `NullPointerException`.
 
-### There is a better way
+#### There is a better way
 
 If we take the code above, we can rewrite it from:
 
@@ -112,7 +112,7 @@ private static void listen(Cat kitty) {
 }
 ```
 
-### We know it's always there
+#### We know it's always there
 
 Occasionally, you might find yourself in a situation where either a presence check or providing an alternate in case of absence is overkill, because you know the `Optional` can't be empty. In that case you should refactor code like this:
 
@@ -157,7 +157,7 @@ The difference here is that `Optional.get()` throws *on accident*, because that'
 
 In general, `Optional.get()` should be considered an alias for `Optional.orElseThrow(BadAtJavaException::new)`.
 
-### Streams!
+#### Streams!
 
 One pattern I've seen a bit is turning a sequence of `Optional<T>`s into a sequence of `T`s, which can be done cleanly using `Stream`s:
 
@@ -198,7 +198,7 @@ public static <T> Stream<T> stream(Optional<T> maybe) {
 
 This pattern comes up often enough that it's well worth extracting as a convenience until you've migrated to Java 9, and then it'll be easy to refactor to the API version.
 
-### What else?
+#### What else?
 
 One thing that none of these patterns help with, though, is when the `if` block has an `else` clause. Sometimes dealing with these constructs is simple. For example:
 
@@ -262,7 +262,7 @@ public static <T> void ifPresentOrElse(Optional<T> optional, Consumer<T> consume
 }
 ```
 
-### Summing up
+#### Summing up
 
 So, to recap:
 
