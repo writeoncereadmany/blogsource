@@ -85,8 +85,8 @@ So we end up with code looking a bit more like this:
 ```java
 public static String getKingBeardColor(Country country) {
     Optional<King> king = country.getKing();
-    Optional<Beard> beard = king.map(King::getBeard);
-    Optional<String> color = beard.flatMap(Beard::getColor);
+    Optional<Beard> beard = king.flatMap(King::getBeard);
+    Optional<String> color = beard.map(Beard::getColor);
     return color.orElse("n/a"); 
 }
 ```
@@ -96,8 +96,8 @@ Which you may choose to inline to something like this:
 ```java
 public static String getKingBeardColor(Country country) {
     return country.getKing()
-                  .map(King::getBeard)
-                  .flatMap(Beard::getColor)
+                  .flatMap(King::getBeard)
+                  .map(Beard::getColor)
                   .orElse("n/a"); 
 }
 ```
@@ -116,11 +116,11 @@ public static String getKingBeardColor(Country country) {
     if(!king.isPresent()) {
         return country.name() + " does not have a king";
     }
-    Optional<Beard> beard = king.map(King::getBeard);
+    Optional<Beard> beard = king.flatMap(King::getBeard);
     if(!beard.isPresent()) {
         return king.get().name() + " does not have a beard";
     }
-    Optional<String> color = beard.flatMap(Beard::getColor);
+    Optional<String> color = beard.map(Beard::getColor);
     return color.orElse("n/a"); 
 }
 ```
@@ -160,24 +160,24 @@ A `Result` is one of two things: either it's a success, containing a value, or i
 
 How often can things fail *and you care how*? That's a place where you should consider using a `Result`.
 
-So let's compare how that code can look, using first `Optional`s and not caring about the error-case:
+So let's compare how that code can look, using first `Optional`, not caring about the error-case:
 
 ```java
 public static String getKingBeardColor(Country country) {
     return country.getKing()
-                  .map(King::getBeard)
-                  .flatMap(Beard::getColor)
+                  .flatMap(King::getBeard)
+                  .map(Beard::getColor)
                   .orElse("n/a"); 
 }
 ```
 
-And secondly using `Result`s, and reporting details about the error:
+And secondly using (a hypothetical implementation of) `Result`, reporting details about the error:
 
 ```java
 public static String getKingBeardColor(Country country) {
     return country.getKing()
-                  .map(King::getBeard)
-                  .flatMap(Beard::getColor)
+                  .flatMap(King::getBeard)
+                  .map(Beard::getColor)
                   .either(success -> success,
                           failure -> failure); 
 }
@@ -231,6 +231,8 @@ public abstract class Result<S, F> {
     }
 }
 ```
+
+Unfortunately, this is basically the minimal case of an algebraic data type in Java.
 
 This creates a type `Result` with two subtypes `Success` and `Failure`. It's impossible to create further subtypes, so any `Result` is either a `Success` or a `Failure`. The only way to access the contents is via a single method `Result::either`, which requires the caller specify how to handle each case.
 
