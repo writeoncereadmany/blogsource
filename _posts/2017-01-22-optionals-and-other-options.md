@@ -193,10 +193,10 @@ There's one big pro on the side of `Optional` over `Result`: `Optional` is in th
 
 On those points:
 - It's really very simple to implement your own, or you could use [this one we open-sourced](https://github.com/unruly/control). 
-- The API could look exactly like the `Optional` API, only with some enhancements around dealing with failure-cases. In the linked example it doesn't, because functions are better than methods, which I'll get onto later.
-- It's trivial to convert between `Result` and `Optional` at module boundaries.
+- The API could look exactly like the `Optional` API, only with some enhancements around dealing with failure-cases. In the linked example it doesn't, because functions are better than methods.
+- If you really need `Optional`s, it's trivial to convert between `Result` and `Optional` at module boundaries.
 
-All the operations you're used to on an `Optional` - you can do those on a `Result`, only now those can be augmented by operations which deal with failure values too. This means you can continue to think in terms of pipelines of operations.
+All the operations you're used to on an `Optional` - you can do those on a `Result`, only now those can be augmented by operations which deal with failure values too. Whereas an `Optional` pipeline will continue operations until it hits an `empty` value (yielding `empty` at the end), a `Result` pipeline can continue operations until it hits a `failure` value (yielding *that* failure at the end). This means you can continue to think in terms of pipelines of operations.
 
 ### How I built Result
 
@@ -206,7 +206,7 @@ Ultimately, a `Result<S, F>` is a generic type over two types: the type of a suc
 data Result s f = Success s | Failure f
 ```
 
-In Java, it's *just a tad* more complex:
+In Java, it's *just a tad* more verbose:
 
 ```java
 public abstract class Result<S, F> {
@@ -250,30 +250,79 @@ The same function in Java:
 
 ```java
 public static <S, S1, F> map(Result<S, F> result, Function<S, S1> mapper) {
-    return result.either(
-        s -> new Success<>(mapper.apply(s)),
-        f -> new Failure<>(f)
-    );
+    return result.either(s -> new Success<>(mapper.apply(s)), Failure::new);
+} 
+```
+
+And, for good measure, here's `flatMap`:
+
+```java
+public static <S, S1, F> flatMap(Result<S, F> result, Function<S, Result<S1, F>> mapper) {
+    return result.either(s -> mapper.apply(s), Failure::new);
 } 
 ```
 
 ### Methods vs Functions
 
-That `map` function could, instead, be written as a method on `Result`: that would be in line with what `Optional` does.
+That `map` function could, instead, be written as a method on `Result`: that would be in line with what `Optional` does, and what Java developers would expect. 
 
-The problem with methods, though, is that if you present an API where you can do three things with an object, those are the only three things your consumers are ever likely to do. If you present an API where you provide a higher-level abstraction and then implement three things *using it*, then not only will people use those three things, they're more likely to build their own ad-hoc extensions to it.
+The problem with methods, though, is one of extensibility. In object-oriented programming, it's easy to add new *types* which support a given set of operations: it's much harder to add an operation to a given type. For example, let's say we have some code which takes an `Optional` and fires an event based on its content, if it's present:
 
-That's why I implemented `map`, `flatMap` and so on as static methods (ie, functions) in terms of `Result::either`. Firstly because I *can*: any possible interaction with a `Result` can be implemented through `Result::either` - and secondly because *you can too*. The library provides many useful patterns but I'm not going to pretend I've considered every use-case, so it's easy to augment it as per your requirements *and retain the same calling conventions*. 
+```java
+public static logEvents(Optional<String> maybeEvent) {
+    maybeEvent.ifPresent(LOG::info);
+}
+```
 
-That's not to say that this approach to API design is pure upside: for starters, your IDE is less useful because you don't have auto-complete on methods. Secondly, composing operations on a `Result` is considerably less elegant.
+But now we want to log an *error* if we don't get an event at all, well. There's an ifPresent() method on Optional, but no ifAbsent(). This gives us some options:
 
-Whereas a method-based API would allow us to do the following:
+```java
+// this approach is noisy, will lead to us repeating ourselves,
+// and inverting conditions is difficult to read and easy to bug out
+public static justInlineIt(Optional<String> maybeEvent) {
+    maybeEvent.ifPresent(LOG::info);
+    if(!maybeEvent.isPresent()) {
+        LOG.error("No event present");
+    }
+}
+
+// this abstracts out the ifAbsent case, but it's inconsistent with the
+// ifPresent call and it's not obvious the two lines are complementary
+public static utilityFunction(Optional<String> maybeEvent) {
+    maybeEvent.ifPresent(LOG::info);
+    ifAbsent(maybeEvent, () -> LOG.error("No event present"));
+}
+
+
+// this gives us a consistent set of operations on the event, but
+// it's inconsistent with other usages of the Optional API
+public static utilityFunction(Optional<String> maybeEvent) {
+    ifPresent(maybeEvent, LOG::info);
+    ifAbsent(maybeEvent, () -> LOG.error("No event present"));
+}
+
+// and our helper functions
+
+public static <T> ifAbsent(Optional<T> maybe, Runnable task) {
+    if(!maybe.isPresent) {
+        task.run();
+    }
+}
+
+public static <T> ifPresent(Optional<T> maybe, Consumer<T> consumer) {
+    maybe.ifPresent(consumer);
+}
+```
+
+That's why I implemented `map`, `flatMap` and so on as static methods (ie, functions) in terms of `Result::either`. Firstly because I can: *any possible interaction* with a `Result` can be implemented through `Result::either` - and secondly because *you can too*. The library provides many useful patterns but I'm not going to pretend I've considered every use-case, so it's easy to augment it as per your requirements *and retain consistent calling conventions*. 
+
+So, where a method-based API would allow us to do the following:
 
 ```java
 public static String getKingBeardColor(Country country) {
     return country.getKing()
-                  .map(King::getBeard)
-                  .flatMap(Beard::getColor)
+                  .flatMap(King::getBeard)
+                  .map(Beard::getColor)
                   .either(success -> success,
                           failure -> failure); 
 }
@@ -283,8 +332,7 @@ With just functions, we could write:
 
 ```java
 public static String getKingBeardColor(Country country) {
-    return flatMap(
-               map(country.getKing(), King::getBeard), 
+    return map(flatMap(country.getKing(), King::getBeard), 
                Beard::getColor
            ).either(
                success -> success,
@@ -293,12 +341,94 @@ public static String getKingBeardColor(Country country) {
 }
 ```
 
-At this point, our reasoning is getting considerably more tangled. Order of operations isn't so clear any more, and that's when we paid particular attention to formatting. That the `flatMap` is being applied to the output of mapping getKing() to getBeard(), even though the `flatMap` is written before the `map` despite the `map` having to be called first...
+But this is ugly. Order of operations isn't so clear any more, and that's when we paid particular attention to formatting. That the `flatMap` is being applied to the output of mapping getKing() to getBeard(), even though the `flatMap` is written before the `map` despite the `map` having to be called first...
 
-All of this is decipherable with practise. That's not the point. The point is we've gone from a typical calling convention where operations are listed in order to one where they're not. Maybe the other benefits of such an API design mean that's a worthwhile tradeoff, and maybe they don't.
+It doesn't have to be this way, though.
 
-Fortunately, that's not a division we need to choose a side on. The functional approach described above is far from ideal, because it's not using the API in the right way. It's approaching it from a noun-composition perspective, whereas what it *ought* to be doing is approaching it from a verb-composition perspective.
+### The Applicable Pattern
 
-What do I mean by that? All will become clear when I start talking about the use-case that motivated me to write this library in the first case: validation.
+There's no need for a tradeoff between versatility and readability here. We can just add another method to `Result`.
 
-But that's something that deserves a post all of its own.
+```java
+public abstract class Result<S, F> {
+    private Result() {}
+
+    public abstract <R> either(Function<S, R> onSuccess, Function<F, R> onFailure);
+
+    public <T> then(ResultMapper<S, F, T> mapper) {
+        return mapper.onResult(this);
+    }
+
+    // subtypes elided...
+}
+
+@FunctionalInterface
+public interface ResultMapper<S, F, T> {
+    T onResult(Result<S, F> result);
+}
+```
+
+I call this the Applicable Pattern. All the method `then` does is invert the calling convention: instead of passing an object to a function, you pass a function to an object. That does mean we need to express our functions in curried form instead:
+
+```java
+public static <S, S1, F> ResultMapper<S, F, Result<S1, F>> map(Function<S, S1> mapper) {
+    return r -> r.either(s -> new Success<>(mapper.apply(s)), Failure::new);
+} 
+
+public static <S, S1, F> ResultMapper<S, F, Result<S1, F>> flatMap(Function<S, Result<S1, F>> mapper) {
+    return r -> r.either(s -> mapper.apply(s), Failure::new);
+} 
+```
+
+This allows us to take all those functions, and compose them sequentially instead:
+
+```java
+public static String getKingBeardColor(Country country) {
+    return country.getKing()
+                  .then(flatMap(King::getBeard))
+                  .then(map(Beard::getColor)) 
+                  .either(success -> success, 
+                          failure -> failure); 
+}
+```
+
+This is only marginally noisier than implementing it with regular methods:
+
+```java
+public static String getKingBeardColor(Country country) {
+    return country.getKing()
+                  .flatMap(King::getBeard)
+                  .map(Beard::getColor)
+                  .either(success -> success,
+                          failure -> failure); 
+}
+```
+
+There's a little boilerplate in having to wrap our function calls in calls to `then`. That's a minor cost. A larger cost is the impact on discoverability: now our auto-completion can't tell us what we can do with a Result, beyond passing it two `Function`s or a `ResultMapper`. That's the point, though: we don't want to define a restricted set of operations.
+
+For example, we often end up with the `Success` and `Failure` types being the same type, and we want to return whatever the current value is, be it success or failure. We've been calling `either` in our examples, but we could just as easily make that a function:
+
+```java
+public static String getKingBeardColor(Country country) {
+    return country.getKing()
+                  .then(flatMap(King::getBeard))
+                  .then(map(Beard::getColor)) 
+                  .then(collapse()); 
+}
+
+static Function<Result<T, T>, T> collapse() {
+    return r -> either(s -> s, f -> f);
+}
+```
+
+We might want to map `Failure` values to new values/types, leaving `Success`es unchanged. We might want to convert a `Result<S, F>` to an `Optional<S>`, throwing away the failure value, to interact with some other API. We might want to invert a `Result`, flipping it so what was a `Success` is now a `Failure` and vice versa. And we might want to do many such operations, in sequence in a pipeline. 
+
+These are trivial functions to write, and now they can be integrated to extend the toolkit we have at our disposal - because we can bring tools into the toolkit from different packages.
+
+### Are we nearly there yet?
+
+If you're dealing with operations which can fail, and you care how they fail, then a `Result` datatype is a good model for that. Operations which can fail are kind of our stock in trade.
+
+This particular implementation of `Result` is designed to be easily composable and extensible. Common operations are provided, and more niche functionality is easily integrated after the fact.
+
+There are many ways to compose and apply some simple operations on `Result`s to build clean approaches to common problems, such as validation, and useful techniques not available in vanilla Java, like flow typing. I'll talk about some of the key examples in the next post.
