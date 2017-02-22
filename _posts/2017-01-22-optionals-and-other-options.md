@@ -12,6 +12,8 @@ What I didn't talk about, though, was why you'd use either in the first place. T
 
 Let's take the example of the King of Spain's beard.
 
+ <!--more-->
+
 ### The King of Spain's Beard
 
 ![King Phillip 2 of Spain](http://study.com/cimages/multimages/16/philip_ii_of_spain_by_antonio_moro.jpg)
@@ -274,7 +276,7 @@ public static logEvents(Optional<String> maybeEvent) {
 }
 ```
 
-But now we want to log an *error* if we don't get an event at all, well. There's an ifPresent() method on Optional, but no ifAbsent(). This gives us some options:
+But now we want to log an *error* if we don't get an event at all, well. There's an `ifPresent()` method on `Optional`, but no `ifAbsent()`. This means we have various options, none of which are particularly inspiring:
 
 ```java
 // this approach is noisy, will lead to us repeating ourselves,
@@ -408,7 +410,7 @@ There's a little boilerplate in having to wrap our function calls in calls to `t
 
 For example, we often end up with the `Success` and `Failure` types being the same type, and we want to return whatever the current value is, be it success or failure. We've been calling `either` in our examples, but we could just as easily make that a function:
 
-```java
+ ```java
 public static String getKingBeardColor(Country country) {
     return country.getKing()
                   .then(flatMap(King::getBeard))
