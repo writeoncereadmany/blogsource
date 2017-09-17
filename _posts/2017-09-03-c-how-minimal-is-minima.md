@@ -6,7 +6,7 @@ published: true
 excerpt_separator: <!--more-->
 ---
 
-This is the second in a series of posts on the [Minima language](https://github.com/writeoncereadmany/minimalang). [Here's the first](https://writeoncereadmany.github.io/2017/09/a-minima),
+This is the third in a series of posts on the [Minima language](https://github.com/writeoncereadmany/minimalang). [Here's the first](https://writeoncereadmany.github.io/2017/09/a-minima),
 and [here's the second](https://writeoncereadmany.github.io/2017/09/b-overloading-in-minima).
 
 One of the motivating factors behind Minima is to make it as small as possible,
