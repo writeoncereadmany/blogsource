@@ -1,0 +1,50 @@
+---
+layout: post
+title: Typing Types
+author: Tom Johnson
+published: false
+excerpt_separator: <!--more-->
+---
+Take a look at this interface:
+```
+interface SingleInstanceStore {
+  SingleInstanceStore put(Object instance);
+  <T> Optional<T> get(Class<T> type);
+}
+```
+What is this? Why might you need it? And how would you go about implementing such a thing?
+
+<!--more-->
+
+This is a container of objects, which can hold at most one object of any given type.
+When you provide it with a type, it then returns an instance of that type (or an
+empty Optional).
+
+Why might you want a container which can contain multiple types, but only one
+instance of each type? Well, let's talk about the Minstrel type system.
+
+Types in Minstrel can be straightforward data types, like `String`, object types
+like `{ x: Number, y : Number }`, or function types like `[Number, Number] -> Number`.
+But they can also have other concerns - for example, purity. We can declare a function
+type like `pure [Number, Number] -> Number`.
+
+Whether or not a function is pure is entirely orthogonal to its input and output
+types. The purity of a custom function can be inferred purely from the purity of
+the expressions it contains, and the assignment/subtyping rules around purity
+(a known pure function may be used where impure functions are expected, but not
+vice versa) are also independent of the function type.
+
+On that basis, it's reasonable to model the type of such a function as the
+product of its signature and its purity - say, an object with two separate fields.
+
+That's just two examples of things we may care about enforcing in our type
+system. We may also want to encode if a variable is a unique reference to an
+object, or the dimensions of a physical quantity, or some  *domain-specific*
+concept.
+
+I refer to these concepts as *concerns*. In my model, a type is an aggregation of
+concerns, and a type system is a combination of derivations (how we determine
+what the type of an expression is) and rules (how we determine whether or not
+an operation is legal).
+
+That's where the `SingleInstanceStore` comes in. 
