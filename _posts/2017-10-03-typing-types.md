@@ -135,4 +135,4 @@ Optional<Integer> iThinkThisIsANumber = hmap.get("Hello");
 
 What if we wanted to do this in a language which doesn't allow you to circumvent
 the type system however you want? Is it possible to implement this in a way
-which is actually type-safe? What does a type system that enables that look like? 
+which is actually type-safe? What does a type system that enables that look like?
