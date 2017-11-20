@@ -173,13 +173,28 @@ public Response updateEmail(String requestBody) {
     .then(ifFailed(reason -> Response.badRequest(reason)));
 }
 ```
-This implements all the same logic, only it uses the
-`co.unruly.control.Result` type to encapsulate failure conditions.
-Not that you'd notice immediately - there's no mention of `Result` in
-the code.
 
-Over a series of posts, I'm going to explain and justify this approach, but
-in brief, it gives us three key advantages over the more typical error
+For comparison, here's the implementation *without any error handling*, which
+is of a similar size and complexity:
+
+```java
+public Response updateEmail(String requestBody) throws IOException {
+    EmailChangeRequest request = objectMapper.readValue(requestBody, EmailChangeRequest.class);
+    Account account = accountRepository.get(request.accountId);
+    String newEmail = canonicalise(request.newEmail);
+    account.setEmail(newEmail);
+    accountRepository.update(account);
+    return ok("E-mail address updated");
+}
+```
+
+This implements all the same logic, only it uses the
+`Result` type from the [co.unruly.control](https://github.com/unruly/control)
+library to encapsulate failure conditions. Not that you'd notice immediately -
+there's no mention of `Result` in the code.
+
+Over a series of upcoming posts, I'm going to explain and justify this approach,
+but in brief, it gives us three key advantages over the more typical error
 handling described above:
 
 Firstly, it's **concise**. It's barely longer than the code which doesn't
@@ -205,6 +220,32 @@ public Response updateEmail(String requestBody) {
     "!!pink!!".then(attempt"!!end!!"(accountRepository::update))
     "!!pink!!".then(onSuccess"!!end!!"(Response::ok))
     "!!pink!!".then(ifFailed(reason -> Response.badRequest(reason)));"!!end!!"
+}
+```
+
+And, for comparison again, the more traditional approach:
+
+```java
+public Response updateEmail(String requestBody) throws IOException {
+  "!!pink!!"try {"!!end!!"
+    EmailChangeRequest request = objectMapper.readValue(requestBody, EmailChangeRequest.class);
+    Account account = accountRepository.get(request.accountId);
+    "!!pink!!"if(account == null) {
+      return badRequest("Account not found");
+    }"!!end!!"
+    String newEmail = canonicalise(request.newEmail);
+    "!!pink!!"if(!isValid(newEmail)) {
+      return badRequest("Invalid e-mail: " + newEmail);
+    }"!!end!!"
+    account.setEmail(newEmail);
+    "!!pink!!"boolean updated ="!!end!!" accountRepository.update(account);
+    "!!pink!!"if(!updated) {
+      return internalServerError("Failed to update account");
+    }"!!end!!"
+    return ok("E-mail address updated");
+  "!!pink!!"} catch (IOException.class) {
+    return badRequest("Could not parse request");
+  }"!!end!!"
 }
 ```
 
