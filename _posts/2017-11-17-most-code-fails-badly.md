@@ -251,7 +251,7 @@ public Response updateEmail(String requestBody) throws IOException {
 
 So, that's where we're going to end up. In order to get there, I'll be discussing
 the following in upcoming posts:
- - What a Result is, and why we need it
+ - [What a Result is, and why we need it](https://writeoncereadmany.github.io/2017/11/how-to-fail-in-java)
  - Carpet-oriented programming with Optionals
  - Programming with functions in Java, and the Applicable pattern
  - Railway-oriented programming with Results
