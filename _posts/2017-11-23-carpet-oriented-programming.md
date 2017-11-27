@@ -11,8 +11,7 @@ a [critique of different ways to represent failure here](https://writeoncereadma
 
 Before we look at railway-oriented programming with `Result`, it'll help if we
 start with the similar, but simpler case of carpet-oriented programming with
-`Optional`. And we'll do this by investigating the case of the King of France's
-beard.
+`Optional`. And we'll illustrate this with the King of Spain's Beard.
 
 <!--more-->
 
@@ -78,7 +77,7 @@ public String describeKingsBeard(Country country) {
 }
 ```
 
-*No. Bad programmer, no twinkie.* That is not how to use `Optional`.
+*No. Bad programmer, no twinkie.* That is **not** how to use `Optional`.
 
 ### Look ma, no ifs!
 
@@ -149,3 +148,99 @@ public String describeKingsBeard(Country country) {
 ```
 
 This is a model I like to call **Carpet-oriented Programming**.
+
+### Carpet-Oriented Programming
+
+The key concept of carpet-oriented programming is: you set up a sequence of
+operations, assuming everything works. Then you run through the operations, and
+if any of them fail, you just... sweep it under the carpet, carry on, and trust
+you'll deal with it later.
+
+For example, let's track the progression of values in a successful case - Spain:
+
+```java
+public String describeKingsBeard(Country country) {                 // country = Spain
+  return country.getMonarch()                                       // gets Felipe VI
+      .flatMap(Person::getBeard)                                    // neatly trimmed
+      .map(Beard::getColour)                                        // salt & pepper
+      .map(colour -> String.format("The king of %s has a %s beard", // describe it, and...
+                                   country,
+                                   colour.describe()))
+      .orElse(country + " does not have a bearded monarch");        // n/m, we succeeded
+}
+```
+
+And then contrast it with one failure case - England, which has a monarch without a beard:
+
+```java
+public String describeKingsBeard(Country country) {                 // country = England
+  return country.getMonarch()                                       // gets Elizabeth II
+      .flatMap(Person::getBeard)                                    // no. sweep under the carpet
+      .map(Beard::getColour)                                        // nothing to see here
+      .map(colour -> String.format("The king of %s has a %s beard", // still nope
+                                   country,
+                                   colour.describe()))
+      .orElse(country + " does not have a bearded monarch");        // ...ok, i pick else
+}
+```
+
+And another - France, which has no monarch:
+
+```java
+public String describeKingsBeard(Country country) {                 // country = France
+  return country.getMonarch()                                       // vive la revolution: carpet
+      .flatMap(Person::getBeard)                                    // le non
+      .map(Beard::getColour)                                        // ceci n'est pas un beard
+      .map(colour -> String.format("The king of %s has a %s beard", // je ne sais pas
+                                   country,
+                                   colour.describe()))
+      .orElse(country + " does not have a bearded monarch");        // ...l'autre
+}
+```
+
+We don't let worries about failure bother us. Rather than have our error
+handling constantly interrupt our train of thought...
+
+```java
+public String describeKingsBeard(Country country) {
+  Person king = country.getMonarch();
+  "!!pink!!"if(king == null) {
+    return String.format("%s does not have a monarch", country);
+  }"!!end!!"
+  Beard beard = king.getBeard();
+  "!!pink!!"if(beard == null) {
+    return String.format("%s does not have a beard", king);
+  }"!!end!!"
+  Color beardColour = beard.getColour();
+  return String.format("The king of %s has a %s beard",
+                       country,
+                       beardColour.describe());
+}
+```
+
+...we put all those concerns to one side, until we resolve a final result:
+
+```java
+public String describeKingsBeard(Country country) {
+  return country.getMonarch()
+      "!!pink!!".flatMap"!!end!!"(Person::getBeard)
+      "!!pink!!".map"!!end!!"(Beard::getColour)
+      "!!pink!!".map"!!end!!"(colour -> String.format("The king of %s has a %s beard",
+                                   country,
+                                   colour.describe()))
+      "!!pink!!".orElse(country + " does not have a bearded monarch");"!!end!!"
+}
+```
+
+This gives us something simpler, something easier to read.
+
+It's not a perfect solution. In doing so, we've lost any detail to our failures.
+We can't distinguish a failure because the country has no monarch from one where
+the monarch is unbearded, as an empty `Optional` carries no information.
+
+But now we understand the basic principles of abstracting and encapsulating
+control flow, we can adapt it to `Result`, support both success and failure
+details, and move from carpet-oriented to railway-oriented programming.
+
+Before we do that, though, I first want to talk a little about the difference
+between methods and functions.

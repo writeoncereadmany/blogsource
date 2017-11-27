@@ -2,7 +2,7 @@
 layout: post
 title: Optionals, and other options
 author: Tom Johnson
-published: true
+published: false
 excerpt_separator: <!--more-->
 ---
 
@@ -24,12 +24,12 @@ What's the colour of the King of Spain's beard? From the image above, I'd descri
 public static String getKingBeardColor(Country country) {
     King king = country.getKing();
     Beard beard = king.getBeard();
-    String color = beard.getColor(); 
+    String color = beard.getColor();
     return color;
 }
 ```
 
-Simple enough. Yeah, we could inline some stuff here, but I'm leaving types for clarity here. 
+Simple enough. Yeah, we could inline some stuff here, but I'm leaving types for clarity here.
 
 We run this method on our test data, and we do indeed get back `"Brown"`. So we deploy to production, and we're getting null pointer exceptions. What's going on here?
 
@@ -48,7 +48,7 @@ public static String getKingBeardColor(Country country) {
     King king = country.getKing();
     Optional<Beard> beard = king.getBeard();
     Optional<String> color = beard.map(Beard::getColor);
-    return color.orElse("n/a"); 
+    return color.orElse("n/a");
 }
 ```
 
@@ -59,7 +59,7 @@ public static String getKingBeardColor(Country country) {
     return country.getKing()
                   .getBeard()
                   .map(Beard::getColor)
-                  .orElse("n/a"); 
+                  .orElse("n/a");
 }
 ```
 
@@ -70,7 +70,7 @@ At this point we have three thoughts, in roughly the following order:
  - Why did I ever think monarch-beard-colors-as-a-service was a viable startup to join?
  - Where exactly is this failing and with what inputs?
 
-As frustrating as it is, this is a problem you *do* need to solve, if only because you've got too much tied up in equity to give up now. So you look at the logs and see that someone queried for the color of the beard of the King of *France*. What's the problem there? 
+As frustrating as it is, this is a problem you *do* need to solve, if only because you've got too much tied up in equity to give up now. So you look at the logs and see that someone queried for the color of the beard of the King of *France*. What's the problem there?
 
 ### The King of France's beard
 
@@ -89,7 +89,7 @@ public static String getKingBeardColor(Country country) {
     Optional<King> king = country.getKing();
     Optional<Beard> beard = king.flatMap(King::getBeard);
     Optional<String> color = beard.map(Beard::getColor);
-    return color.orElse("n/a"); 
+    return color.orElse("n/a");
 }
 ```
 
@@ -100,7 +100,7 @@ public static String getKingBeardColor(Country country) {
     return country.getKing()
                   .flatMap(King::getBeard)
                   .map(Beard::getColor)
-                  .orElse("n/a"); 
+                  .orElse("n/a");
 }
 ```
 
@@ -123,7 +123,7 @@ public static String getKingBeardColor(Country country) {
         return king.get().name() + " does not have a beard";
     }
     Optional<String> color = beard.map(Beard::getColor);
-    return color.orElse("n/a"); 
+    return color.orElse("n/a");
 }
 ```
 
@@ -134,7 +134,7 @@ public static String getKingBeardColor(Country country) {
     Optional<King> king = country.getKing();
     return king.map(KingBeards::getBeardColor)
                .orElseGet(() -> country.name() + " does not have a king");
-} 
+}
 
 public static String getBeardColor(King king) {
     return king
@@ -169,7 +169,7 @@ public static String getKingBeardColor(Country country) {
     return country.getKing()
                   .flatMap(King::getBeard)
                   .map(Beard::getColor)
-                  .orElse("n/a"); 
+                  .orElse("n/a");
 }
 ```
 
@@ -181,7 +181,7 @@ public static String getKingBeardColor(Country country) {
                   .flatMap(King::getBeard)
                   .map(Beard::getColor)
                   .either(success -> success,
-                          failure -> failure); 
+                          failure -> failure);
 }
 ```
 
@@ -194,7 +194,7 @@ From one perspective, an `Optional` is just a special case of `Result`, where th
 There's one big pro on the side of `Optional` over `Result`: `Optional` is in the Java 8 API, whereas `Result` isn't. That means it's already there, other devs will be well-acquainted with its API, and other APIs will interface via `Optional`s.
 
 On those points:
-- It's really very simple to implement your own, or you could use [this one we open-sourced](https://github.com/unruly/control). 
+- It's really very simple to implement your own, or you could use [this one we open-sourced](https://github.com/unruly/control).
 - The API could look exactly like the `Optional` API, only with some enhancements around dealing with failure-cases. In the linked example it doesn't, because functions are better than methods.
 - If you really need `Optional`s, it's trivial to convert between `Result` and `Optional` at module boundaries.
 
@@ -238,7 +238,7 @@ Unfortunately, this is basically the minimal case of an algebraic data type in J
 
 This creates a type `Result` with two subtypes `Success` and `Failure`. It's impossible to create further subtypes, so any `Result` is either a `Success` or a `Failure`. The only way to access the contents is via a single method `Result::either`, which requires the caller specify how to handle each case.
 
-Not only that, but it encourages a syntactic style that's reminiscent of pattern-matching in more functional languages, where we split down the possible cases and handle each separately. 
+Not only that, but it encourages a syntactic style that's reminiscent of pattern-matching in more functional languages, where we split down the possible cases and handle each separately.
 
 For example, in Haskell, you might write `map` as follows:
 
@@ -253,7 +253,7 @@ The same function in Java:
 ```java
 public static <S, S1, F> map(Result<S, F> result, Function<S, S1> mapper) {
     return result.either(s -> new Success<>(mapper.apply(s)), Failure::new);
-} 
+}
 ```
 
 And, for good measure, here's `flatMap`:
@@ -261,12 +261,12 @@ And, for good measure, here's `flatMap`:
 ```java
 public static <S, S1, F> flatMap(Result<S, F> result, Function<S, Result<S1, F>> mapper) {
     return result.either(s -> mapper.apply(s), Failure::new);
-} 
+}
 ```
 
 ### Methods vs Functions
 
-That `map` function could, instead, be written as a method on `Result`: that would be in line with what `Optional` does, and what Java developers would expect. 
+That `map` function could, instead, be written as a method on `Result`: that would be in line with what `Optional` does, and what Java developers would expect.
 
 The problem with methods, though, is one of extensibility. In object-oriented programming, it's easy to add new *types* which support a given set of operations: it's much harder to add an operation to a given type. For example, let's say we have some code which takes an `Optional` and fires an event based on its content, if it's present:
 
@@ -316,7 +316,7 @@ public static <T> ifPresent(Optional<T> maybe, Consumer<T> consumer) {
 }
 ```
 
-That's why I implemented `map`, `flatMap` and so on as static methods (ie, functions) in terms of `Result::either`. Firstly because I can: *any possible interaction* with a `Result` can be implemented through `Result::either` - and secondly because *you can too*. The library provides many useful patterns but I'm not going to pretend I've considered every use-case, so it's easy to augment it as per your requirements *and retain consistent calling conventions*. 
+That's why I implemented `map`, `flatMap` and so on as static methods (ie, functions) in terms of `Result::either`. Firstly because I can: *any possible interaction* with a `Result` can be implemented through `Result::either` - and secondly because *you can too*. The library provides many useful patterns but I'm not going to pretend I've considered every use-case, so it's easy to augment it as per your requirements *and retain consistent calling conventions*.
 
 So, where a method-based API would allow us to do the following:
 
@@ -326,7 +326,7 @@ public static String getKingBeardColor(Country country) {
                   .flatMap(King::getBeard)
                   .map(Beard::getColor)
                   .either(success -> success,
-                          failure -> failure); 
+                          failure -> failure);
 }
 ```
 
@@ -334,12 +334,12 @@ With just functions, we could write:
 
 ```java
 public static String getKingBeardColor(Country country) {
-    return map(flatMap(country.getKing(), King::getBeard), 
+    return map(flatMap(country.getKing(), King::getBeard),
                Beard::getColor
            ).either(
                success -> success,
                failure -> failure
-           ); 
+           );
 }
 ```
 
@@ -375,11 +375,11 @@ I call this the Applicable Pattern. All the method `then` does is invert the cal
 ```java
 public static <S, S1, F> ResultMapper<S, F, Result<S1, F>> map(Function<S, S1> mapper) {
     return r -> r.either(s -> new Success<>(mapper.apply(s)), Failure::new);
-} 
+}
 
 public static <S, S1, F> ResultMapper<S, F, Result<S1, F>> flatMap(Function<S, Result<S1, F>> mapper) {
     return r -> r.either(s -> mapper.apply(s), Failure::new);
-} 
+}
 ```
 
 This allows us to take all those functions, and compose them sequentially instead:
@@ -388,9 +388,9 @@ This allows us to take all those functions, and compose them sequentially instea
 public static String getKingBeardColor(Country country) {
     return country.getKing()
                   .then(flatMap(King::getBeard))
-                  .then(map(Beard::getColor)) 
-                  .either(success -> success, 
-                          failure -> failure); 
+                  .then(map(Beard::getColor))
+                  .either(success -> success,
+                          failure -> failure);
 }
 ```
 
@@ -402,7 +402,7 @@ public static String getKingBeardColor(Country country) {
                   .flatMap(King::getBeard)
                   .map(Beard::getColor)
                   .either(success -> success,
-                          failure -> failure); 
+                          failure -> failure);
 }
 ```
 
@@ -414,8 +414,8 @@ For example, we often end up with the `Success` and `Failure` types being the sa
 public static String getKingBeardColor(Country country) {
     return country.getKing()
                   .then(flatMap(King::getBeard))
-                  .then(map(Beard::getColor)) 
-                  .then(collapse()); 
+                  .then(map(Beard::getColor))
+                  .then(collapse());
 }
 
 static Function<Result<T, T>, T> collapse() {
@@ -423,7 +423,7 @@ static Function<Result<T, T>, T> collapse() {
 }
 ```
 
-We might want to map `Failure` values to new values/types, leaving `Success`es unchanged. We might want to convert a `Result<S, F>` to an `Optional<S>`, throwing away the failure value, to interact with some other API. We might want to invert a `Result`, flipping it so what was a `Success` is now a `Failure` and vice versa. And we might want to do many such operations, in sequence in a pipeline. 
+We might want to map `Failure` values to new values/types, leaving `Success`es unchanged. We might want to convert a `Result<S, F>` to an `Optional<S>`, throwing away the failure value, to interact with some other API. We might want to invert a `Result`, flipping it so what was a `Success` is now a `Failure` and vice versa. And we might want to do many such operations, in sequence in a pipeline.
 
 These are trivial functions to write, and now they can be integrated to extend the toolkit we have at our disposal - because we can bring tools into the toolkit from different packages.
 
