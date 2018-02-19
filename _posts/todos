@@ -4,8 +4,8 @@ series of posts:
   the difference between functions and methods
   applicable pattern and pipes
   railway-oriented programming with control (onSuccess, attempt, ifFailed only)
-  fancy railways: onFailure, recover, collapse, split etc
   recontextualisation and higher-order programming
+  fancy railways: onFailure, recover, collapse, split etc
   streams, exceptions, and results (there is no try)
   failure patterns: matching
   failure patterns: validation
