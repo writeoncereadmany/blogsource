@@ -1,8 +1,8 @@
 ---
 layout: post
-title: The Applicable Pattern, or The Difference Between Functions And Methods
+title: The Difference Between Functions And Methods
 author: Tom Johnson
-published: false
+published: true
 excerpt_separator: <!--more-->
 ---
 
@@ -13,7 +13,7 @@ and [an overview of carpet-oriented programming - abstracting control flow with 
 
 Java 8 introduced `Optional`, along with lambdas and method references. There
 was quite a lot of debate on its API - some wanted it to be just a null-safe
-container, whereas others lobbied for methods like `map` and `flatMap`.
+container, whereas others lobbied for methods like `map()` and `flatMap()`.
 
 Getting the API right for foundational types like `Optional` is really hard. Too
 many capabilities and the clarity of purpose is obscured; too few and you miss
@@ -86,13 +86,15 @@ second-class citizens, we have auto-complete discoverability on API operations
 but not ours so it's quite likely users will constantly restrict themselves to
 the provided API, and so on.
 
-It quickly became apparent that this was an important capability for `Optional`,
-and it showed up in Java 9 as `Optional.ifPresentOrElse()`.
+*By implementing an API with methods, you are closing it to extension*.
+
+### Functions: An Alternative to Methods
 
 Maybe, you're thinking, that's just life: we can't expect API implementers to
-anticipate every possible requirement. That's true. However, it's possible to
-satisfy every possible operation on an `Optional` with just a single method,
-`either`:
+anticipate every possible requirement, and provide a method for each. Even if we
+could, it wouldn't be desirable: there would be a big cost to learning how to
+use such classes. That's true. However, it's possible to satisfy every possible
+requirement on an `Optional` with just a single method - `either`:
 
 ```java
 public abstract class MyOptional<T> {
@@ -118,25 +120,29 @@ public abstract class MyOptional<T> {
 ```
 
 Literally everything we could ever want to do with an `Optional`, we can do
-with this. `map` is a one-liner:
+with this. `map()` is a one-liner:
 ```java
-public static <T, R> map(MyOptional<T> maybe, Function<T, R> mapper) {
+public static <T, R> MyOptional<R> map(
+  MyOptional<T> maybe, Function<T, R> mapper)
+{
   return maybe.either(v -> MyOptional.of(mapper.apply(v)), MyOptional::empty);
 }
 ```
-As is `flatMap`:
+As is `flatMap()`:
 ```java
-public static <T, R> flatMap(MyOptional<T> maybe, Function<T, Optional<R>> mapper) {
+public static <T, R> MyOptional<R> flatMap(
+  MyOptional<T> maybe, Function<T, Optional<R>> mapper)
+{
   return maybe.either(mapper, MyOptional::empty);
 }
 ```
-As is `orElse`:
+As is `orElse()`:
 ```java
-public static <T> orElse(MyOptional<T> maybe, T defaultValue) {
+public static <T> T orElse(MyOptional<T> maybe, T defaultValue) {
   return maybe.either(v -> v, () -> defaultValue);
 }
 ```
-As is our desired `ifAbsent`:
+As is our desired `ifAbsent()`:
 ```java
 public static Void ifAbsent(MyOptional<T> maybe, Runnable whenAbsent) {
   return maybe.either(v -> null, () -> { whenAbsent.run(); return null; });
@@ -149,7 +155,7 @@ shipped API*.
 
 This isn't just a case of insurance against oversight in the initial API design:
 it fundamentally supports a type of abstraction an API made of methods doesn't.
-`ifAbsent` is the sort of thing you can argue ought to be a method on `Optional`,
+`ifAbsent()` is the sort of thing you can argue ought to be a method on `Optional`,
 but over time you'll find yourself wanting all sorts of different operations at
 different levels of abstraction.
 
@@ -174,3 +180,50 @@ public static Optional<Hat> getHat(Person person) {
   }
 }
 ```
+
+### Functions for everybody?
+
+Now, this isn't desirable for *every* class. But for sum types like `Optional`,
+it's effectively presenting a pattern match - this code in Java:
+
+```java
+public static String getName(MyOptional<Person> maybePerson) {
+    return maybePerson.either(
+        person -> person.getName(),
+        ()     -> "Unknown");
+}
+```
+Is equivalent to this code in Haskell:
+
+```haskell
+getName :: Maybe Person -> String
+getName person = case person of
+    (Just person) -> nameOf person
+    Nothing       -> "Unknown"
+```
+
+This is exposing the internals of the class: the opposite of encapsulation.
+That's not what we were taught about how to do OO well!
+
+Well, the thing is, `MyOptional` *isn't really an object*. It's data. We don't
+want to *limit* how people interact with it - we just want to make sure that
+all the cases are covered, and addresses with code which handles that case.
+
+All the methods - `map()`, `flatMap()` and so on - are there as abstractions for
+*convenience*, not necessity. They're common operations, as opposed to fundamental
+primitives of interacting with the type.
+
+This is in contrast to, say, a `BankAccount` class, where we definitely *do* want to
+limit how the user interacts with the internal state of the object. We can limit
+access with functions, of course, but the desire for extensibility isn't the same.
+
+### Summing Up
+
+When you have a simple data type, you don't care how users manipulate it, and
+a number of higher-order interactions with it, consider using methods to expose
+that state safely and implement the higher-order interactions using functions. It
+keeps the data-type implementation small, and encourages extension by users.
+
+There is an important caveat: just doing this alone can lead to unwieldly code.
+There's a second part to implementing this well (in Java, anyway): the
+Applicable Pattern, which I'll discuss in the next post.

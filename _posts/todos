@@ -1,9 +1,12 @@
 series of posts:
   most code fails badly
   carpet-oriented programming
-  * the difference between functions and methods (applicable pattern)
+  the difference between functions and methods
+  applicable pattern and pipes
   railway-oriented programming with control (onSuccess, attempt, ifFailed only)
+  fancy railways: onFailure, recover, collapse, split etc
   recontextualisation and higher-order programming
   streams, exceptions, and results (there is no try)
-  failure patterns (intro, matching, validation)
+  failure patterns: matching
+  failure patterns: validation
   the trouble with monads
