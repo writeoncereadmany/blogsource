@@ -35,6 +35,6 @@ paginate: 3
 
 highlighter: rouge
 markdown: kramdown
-gems: ['jekyll-paginate', 'jekyll-twitter-plugin']
+plugins: ['jekyll-paginate', 'jekyll-twitter-plugin']
 
 exclude: ['README.md', 'LICENSE']
