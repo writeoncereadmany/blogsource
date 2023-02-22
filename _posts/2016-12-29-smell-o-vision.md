@@ -97,21 +97,17 @@ So I'm trying to find a way to automate the post-processing of HTML that I had p
 My first attempts were to introduce some markup that was clearly not Java: for example, `$pink$` and `$end$` for the beginning and end of a range to be highlighted in pink. This would have worked a treat if I was highlighting preformatted text, like this:
 
 ```
- ```
  public static void main(String[] args) {
 	 System.out.println("Cheeseburgers!");
  }
- ```
 ```
 
 But I wasn't. I was highlighting *Java code*, specified as so:
 
-```
- ```java
+```java
  public static void main(String[] args) {
  	 System.out.println("Cheeseburgers!");
  }
- ```
 ```
 Which generates:
 
@@ -123,13 +119,12 @@ public static void main(String[] args) {
 
 That's all formatted, on the expectation that what I give it is Java. So what happens when I introduce some non-Java markup to that? For example:
 
-```
- ```java
+```java
  public static void main(String[] args) {
  	 $pink$System.out.println$end$("Cheeseburgers!");
  }
- ```
 ```
+
 The generated HTML for the print line looks something like:
 
 ```
